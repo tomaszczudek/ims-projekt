@@ -1,0 +1,53 @@
+hlavni studie/paper problem je to z COVIDu
+https://www.nature.com/articles/s41598-021-97745-y#Sec1
+
+mozna lepsi varianty/studie
+https://pmc.ncbi.nlm.nih.gov/articles/PMC9800557/
+https://pmc.ncbi.nlm.nih.gov/articles/PMC11027090/
+https://www.sciencedirect.com/science/article/pii/S1364815225000404
+
+Vztah pocasi a znecisteni
+https://learn.kaiterra.com/en/air-academy/temperature-inversions-weather-air-pollution
+
+
+Wikipedie
+------------------------------------------------------------------------
+HCHO
+https://cs.wikipedia.org/wiki/Formaldehyd
+
+NO2
+https://cs.wikipedia.org/wiki/Oxid_dusičitý
+------------------------------------------------------------------------
+
+
+Data
+------------------------------------------------------------------------
+data NO2 HCHO
+https://www.temis.nl/airpollution/no2.php
+
+NO2 2004-2021
+https://www.temis.nl/airpollution/no2col/no2regioomimonth_qa.php
+
+N02 2018-2025
+https://www.temis.nl/airpollution/no2col/no2regio_tropomi.php
+
+HCHO data
+https://atmos.eoc.dlr.de/app/calendar
+------------------------------------------------------------------------
+
+
+Vztah NO2 a HCHO
+------------------------------------------------------------------------
+Photochemical production and loss rates of formaldehyde HCHO
+https://acp.copernicus.org/articles/21/18413/2021/acp-21-18413-2021.pdf
+
+MAX-DOAS measurements of NO2, HCHO
+https://acp.copernicus.org/preprints/acp-2020-404/acp-2020-404.pdf
+------------------------------------------------------------------------
+
+Populace x znecisteni
+https://pubs.acs.org/doi/10.1021/es400744g
+
+
+Zdroje znečištění
+https://www.chmi.cz/files/portal/docs/uoco/web_generator/plants/index.html
