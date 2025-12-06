@@ -31,8 +31,7 @@
 *.out
 *.app
 
-/mapa ims/macbook-data
-/mapa ims/venv
-/mapa ims/env
-/mapa ims/*.bin
 *.zip
+/mapa
+/data
+/env
