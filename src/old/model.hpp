@@ -414,10 +414,16 @@ class MeteoScenarios
         }
 };
 
-inline const MeteoData& getRandomScenario(const std::vector<MeteoData>& scenarios)
+inline MeteoData& getRandomScenario(std::vector<MeteoData>& scenarios)
 {
-    std::uniform_int_distribution<size_t> dist(0, scenarios.size() - 1);
+    std::uniform_int_distribution<int> dist(0, scenarios.size() - 1);
     return scenarios[dist(rng)];
+}
+
+inline float getRandomWindDirection()
+{
+    std::uniform_int_distribution<int> dist(0, 23);
+    return dist(rng)*15.0f;
 }
 
 #endif // model_hpp
