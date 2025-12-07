@@ -6,6 +6,8 @@
 #define OUTPUT_PATH_PNG "output.png"
 #define NUM_ITERATION 200
 
+#define DEBUG 0
+
 int main()
 {
     Loader loader(BIN_PATH);
@@ -23,9 +25,12 @@ int main()
     // Run the simulation
     sim.run_simulation(loader.get_plants(), NUM_ITERATION);
 
-    // Save results to files
-    loader.save_to_binary(OUTPUT_PATH_BIN);
+    // Save results to image
     loader.save_png(OUTPUT_PATH_PNG);
+    
+    #if DEBUG
+        loader.save_to_binary(OUTPUT_PATH_BIN);
+    #endif
 
     return 0;
 }
