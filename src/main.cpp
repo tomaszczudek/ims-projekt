@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include "loader.hpp"
+#include "sim.hpp"
 
 int main()
 {
@@ -96,5 +97,7 @@ int main()
     // Cleanup
     loader.close();
 
+    Simulation sim;
+    sim.run_sim();
     return 0;
 }
