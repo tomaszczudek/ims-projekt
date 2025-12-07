@@ -15,10 +15,10 @@ int main()
     if (!loader.load_all_data())
         return 1;
 
-    Simulation sim(loader.get_heights(), loader.get_pollution());
+    Simulation sim(loader.get_heights(), loader.get_pollution(), loader.get_height(), loader.get_width());
 
     // Data loaded successfully
-    sim.run_simulation(loader.get_plants(), NUM_ITERATION, loader.get_height(), loader.get_width());
+    sim.run_simulation(loader.get_plants(), NUM_ITERATION);
 
     // Save results to binary file
     loader.save_to_binary(OUTPUT_PATH);

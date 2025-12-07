@@ -25,6 +25,8 @@ run: $(EXE)
 clean:
 	rm -f $(OBJ) $(EXE)
 
+zip:
+	zip -r 07_xczudet00_xkohutj00.zip src/  Makefile
 # Make init data
 bin:
 	cd py && python3 export_to_bin.py

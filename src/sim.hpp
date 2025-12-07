@@ -96,159 +96,94 @@ class Simulation
         std::vector<std::vector<uint16_t>>& heights_vec;
         std::vector<std::vector<float>>& pollution_vec;
 
+        uint32_t height;
+        uint32_t width;
     public:
         Simulation(
             std::vector<std::vector<uint16_t>>& heights,
-            std::vector<std::vector<float>>& pollution
-        ) : heights_vec(heights), pollution_vec(pollution) {}
+            std::vector<std::vector<float>>& pollution,
+            uint32_t height,
+            uint32_t width
+        ) : heights_vec(heights), pollution_vec(pollution), height(height), width(width) {}
 
         void generatePolution(const std::vector<Plant>& plants)
         {
             for (const auto& plant : plants)
-            {
-                // Konverze: kg/rok → kg/hodinu
-                float hourly_emission = plant.emission / CONVERSION_HOUR_KG;
-                pollution_vec[plant.row][plant.col] += hourly_emission;
-            }
+                pollution_vec[plant.row][plant.col] += (plant.emission / CONVERSION_HOUR_KG);
         }
 
-        void distributePolution(uint32_t height, uint32_t width, float wind_direction, float wind_speed)
+        void distributePolution(float wind_direction, float wind_speed)
         {
-            /*
-            std::cout << "💨 Distribuce znečištění..." << std::endl;
-            std::cout << "  Vítr: " << wind_direction * 180.0f / PI << "°, "
-                    << wind_speed << " m/s" << std::endl;
-            */
-            // Vytvoř dočasný grid pro nově distribuované hodnoty
-            std::vector<std::vector<float>> distributed(
-                height, std::vector<float>(width, 0.0f)
+            std::vector<std::vector<bool>> visited(
+                height, std::vector<bool>(width, false)
             );
             
-            // Iteruj přes každou buňku v pollution gridu
+            // Projdi všechny buňky (bez tohoto bychom nezačali shora)
             for (uint32_t r = 0; r < height; r++)
             {
                 for (uint32_t c = 0; c < width; c++)
                 {
-                    // Pokud je znečištění zanedbatelné, přeskočit
+                    // Pokud je znečištění pod prahem, skip
                     if (pollution_vec[r][c] < THRESHOLD)
                         continue;
                     
-                    float current_pollution = pollution_vec[r][c];
-                    uint16_t source_height = heights_vec[r][c];
-                    float transfered_amount = 0.0f;
+                    if (visited[r][c])
+                        continue;
                     
-                    // ═══════════════════════════════════════════════════════════
-                    // ROZPROSTŘI DO VŠECH 8 OKOLNÍCH BUNĚK
-                    // ═══════════════════════════════════════════════════════════
-                    
-                    for (int dir = 0; dir < 8; dir++)
-                    {
-                        // Získej sousední buňku
-                        NeighborPos neighbor = get_neighbor(r, c, dir, height, width);
-                        
-                        if (!neighbor.valid)
-                            continue;  // Mimo grid
-                        
-                        int nr = neighbor.new_row;
-                        int nc = neighbor.new_col;
-                        
-                        // ═════════════════════════════════════════════════════
-                        // VÝPOČET ÚTLUMU NA ZÁKLADĚ VĚTRU
-                        // ═════════════════════════════════════════════════════
-                        
-                        float decay = compute_decay_factor(wind_direction, dir);
-                        
-                        // ═════════════════════════════════════════════════════
-                        // ZOHLEDNĚNÍ NADMOŘSKÉ VÝŠKY (emise padají dolů)
-                        // ═════════════════════════════════════════════════════
-                        
-                        uint16_t dest_height = heights_vec[nr][nc];
-                        
-                        // Cílová buňka je VÝŠE → emise padají dolů
-                        // Násobíme s penalizačním faktorem
-                        if (dest_height > source_height)
-                            decay *= GRAVITY_PENALTY;
-
-                        // Pokud dest_height < source_height → normální šíření
-                        
-                        // ═════════════════════════════════════════════════════
-                        // VÝPOČET DISTRIBUOVANÉ HODNOTY
-                        // ═════════════════════════════════════════════════════
-                        
-                        float distributed_amount = current_pollution * decay;
-                        
-                        // ═════════════════════════════════════════════════════
-                        // KONTROLA PRAHU ZANEDBATELNOSTI
-                        // ═════════════════════════════════════════════════════
-                        
-                        if (distributed_amount < THRESHOLD)
-                            continue;  // Příliš malé → ignoruj
-                        
-                        // ═════════════════════════════════════════════════════
-                        // PŘIDEJ DO SOUSEDNÍ BUŇKY
-                        // ═════════════════════════════════════════════════════
-                        
-                        distributed[nr][nc] += distributed_amount;
-                        transfered_amount += distributed_amount;
-                    }
-                    
-                    // ═══════════════════════════════════════════════════════════
-                    // PŮVODNÍ BUŇKA ZŮSTANE (nebo se rozpustí)
-                    // ═══════════════════════════════════════════════════════════
-                    
-                    // Možnost 1: Ponech původní hodnotu (akumulace)
-                    distributed[r][c] = current_pollution - transfered_amount;
-                    
-                    // Možnost 2: Rozpusť (zbude 50%)
-                    // distributed[r][c] += current_pollution * 0.5f;
+                    // SPUSŤ REKURZIVNÍ FLOOD-FILL!
+                    distribute_recursive(r, c, pollution_vec[r][c],
+                                        wind_direction, visited);
                 }
             }
-            
-            // ════════════════════════════════════════════════════════════════
-            // PŘESUŇ DISTRIBUOVANÉ HODNOTY ZPĚT DO POLLUTION VEKTORU
-            // ════════════════════════════════════════════════════════════════
-            
-            pollution_vec = distributed;
-            
-            // Statistika
-            /*
-            float max_conc = 0.0f;
-            float total_conc = 0.0f;
-            uint32_t cells_with_pollution = 0;
-            
-            for (uint32_t r = 0; r < height; r++)
-            {
-                for (uint32_t c = 0; c < width; c++)
-                {
-                    if (pollution_vec[r][c] > THRESHOLD)
-                    {
-                        max_conc = std::max(max_conc, pollution_vec[r][c]);
-                        total_conc += pollution_vec[r][c];
-                        cells_with_pollution++;
-                    }
-                }
-            }
-            
-            
-            std::cout << "  ✓ Distribuováno do " << cells_with_pollution 
-                    << " buněk" << std::endl;
-            std::cout << "  ✓ Max koncentrace: " << max_conc << " kg/m³" << std::endl;
-            std::cout << "  ✓ Průměrná koncentrace: " 
-                    << (cells_with_pollution > 0 ? total_conc / cells_with_pollution : 0)
-                    << " kg/m³\n" << std::endl;
-            */
         }
 
-        void run_simulation(const std::vector<Plant>& plants, uint32_t iterations, uint32_t height, uint32_t width)
+        void distribute_recursive(int r, int c, float current_pollution, float wind_direction, std::vector<std::vector<bool>>& visited)
         {
-            generatePolution(plants);
+            if (current_pollution < THRESHOLD) return;
+            if (visited[r][c]) return;
             
+            visited[r][c] = true;
+            
+            uint16_t source_height = heights_vec[r][c];
+            float transferred = 0.0f;  // ← SLEDUJ KOLIK SE ODEŠLE
+            
+            for (int dir = 0; dir < 8; dir++) {
+                NeighborPos neighbor = get_neighbor(r, c, dir, height, width);
+                
+                if (!neighbor.valid)
+                    continue;
+                
+                float decay = compute_decay_factor(wind_direction, dir);
+                
+                uint16_t dest_height = heights_vec[neighbor.new_row][neighbor.new_col];
+                
+                if (dest_height > source_height)
+                    decay *= GRAVITY_PENALTY;
+                
+                float distributed_amount = current_pollution * decay;
+                
+                if (distributed_amount < THRESHOLD)
+                    continue;
+                
+                // PŘIDEJ do souseda
+                pollution_vec[neighbor.new_row][neighbor.new_col] += distributed_amount;
+                transferred += distributed_amount;
+                
+                // REKURZE
+                if (distributed_amount >= THRESHOLD && !visited[neighbor.new_row][neighbor.new_col])
+                    distribute_recursive(neighbor.new_row, neighbor.new_col, distributed_amount, wind_direction, visited);
+            }
+            
+            pollution_vec[r][c] -= transferred;
+        }
+
+
+        void run_simulation(const std::vector<Plant>& plants, uint32_t iterations)
+        {
             for (uint32_t iter = 0; iter < iterations; iter++)
             {
-                float wind_dir = generateWindDirection();
-                float wind_spd = generateWindSpeed();
-                
-                distributePolution(height, width, wind_dir, wind_spd);
+                generatePolution(plants);
+                distributePolution(generateWindDirection(), generateWindSpeed());
                 
                 std::cout << "  [" << (iter + 1) << "/" << iterations << "] iterací\n" 
                         << std::endl;
