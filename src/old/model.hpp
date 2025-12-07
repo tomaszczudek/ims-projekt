@@ -9,9 +9,9 @@
 #include <iostream>
 #include <random>
 
-#define EMISSION_CONVERSION_FACTOR_SEC (365.25f * 24.0f * 3600.0f)
-#define EMISSION_CONVERSION_FACTOR_HOUR (365.25f * 24.0f)
-#define EMISSION_CONVERSION_FACTOR_DAY (365.25f)
+#define EMISSION_CONVERSION_FACTOR_SEC (0.36525f * 24.0f * 3600.0f)
+#define EMISSION_CONVERSION_FACTOR_HOUR (0.36525f * 24.0f)
+#define EMISSION_CONVERSION_FACTOR_DAY (0.36525f)
 
 #define WIDTH_KM 105.0f
 #define HEIGHT_KM 127.0f
@@ -124,7 +124,9 @@ class GaussianPlumeModel
 
             // Vypočítej statistiku terénu
             compute_elevation_stats();
-
+            std::cout << "Sirka bunjky je " << (WIDTH_KM * 1000.0f) / grid_width_ << " m/px" << std::endl;
+            std::cout << "Vyska bunky je " << (HEIGHT_KM * 1000.0f) / grid_height_ << " m/px" << std::endl;
+            std::cout << "Resolution je " << grid_resolution_ << " m/px" << std::endl;
             std::cout << "\n✓ GaussianPlumeModel V3 inicializován (SE ELEVACÍ):" << std::endl;
             std::cout << "  Grid: " << grid_width_ << "×" << grid_height_ << std::endl;
             std::cout << "  Resolution: " << grid_resolution_ << " m/px" << std::endl;

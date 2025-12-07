@@ -341,7 +341,7 @@ def step3_create_pollution_grid(heights, mapped_plants):
 
     return pollution_grid
 
-def step4_export_bin_v5_with_plants(heights, pollution, transform, mapped_plants, output_file='../src/init32.bin'):
+def step4_export_bin_v5_with_plants(heights, pollution, transform, mapped_plants, output_file='../src/init.bin'):
     """Exportuj do BIN s uloženými indexy továren"""
     print("=" * 70)
     print("KROK 4: EXPORT V5 BINARY S INDEXY TOVÁREN")

@@ -1,154 +1,262 @@
 #ifndef sim_hpp
 #define sim_hpp
-/**
- * Pravidla simulace:
- * 
- * Pokud bunka ma hodnotu -> uber z bunky pulku a rozloz 
- */
-#include <vector>
+
+#pragma once
+
 #include <iostream>
+#include <vector>
+#include <random>
 #include <cmath>
+#include <ctime>
 
-#define dir(x, y) M_PI * x / 8 < deg && deg < M_PI * y / 8
-#define DISP 0.2
+struct Plant;
 
-class Simulation {
-    public:
-        int run_sim() {
-            std::vector<std::vector<int>> field(100, std::vector<int>(100, 0));
+#define CONVERSION_SEC_KG   (365.25f * 24.0f * 3600.0f)
+#define CONVERSION_HOUR_KG  (365.25f * 24.0f)
+#define CONVERSION_DAY_KG   (365.25f)
 
-            field[50][50] = 80;
+#define AREA_OF_CELL32   (132 * 192)
+#define AREA_OF_CELL16   (66 * 96)
 
-            
+#define THRESHOLD        0.00001f      
+#define GRAVITY_PENALTY  0.5f          
 
-            print_sim(&field);
-            
+constexpr float PI = 3.14159265359f;
 
-            int dx = 100;
-            int dy = 100;
-            int dz = 10;
-            int dt = 10;
-            float ux = -5;
-            float uy = -5;
-            float k = 20;
-            float vs = 0.03;
-            float vd = DISP;
+static std::mt19937 rng(std::random_device{}());
 
-            float windx = ux * dt / dx; 
-            float windy = uy * dt / dy;
-            float diffx = k * dt / (dx * dx);
-            float diffy = k * dt / (dy * dy);
+float generateWindDirection()
+{
+    std::uniform_int_distribution<> dist(0, 23);
+    return (dist(rng) * 15.0f) * (PI / 180.0f);  // 0-360° v radiánech
+}
 
-            int ddx=0, ddy=0;
-            float deg = 0;
+float generateWindSpeed()
+{
+    std::uniform_real_distribution<> dist(1.0f, 10.0f);
+    return dist(rng);  // m/s
+}
 
-            for (int x = 0; x < 100; x++) {
-                for (int y = 0; y < 100; y++) {
-                    deg = atan2 (uy, ux);
-                    
-                    if (dir(1, 3))  {
-                        ddx = 1;
-                        ddy = 1;
-                    } else if (dir(3, 5)) {
-                        ddx = 0;
-                        ddy = 1;
-                    } else if (dir(5, 7)) {
-                        ddx = -1;
-                        ddy = 1;
-                    } else if (dir(7, 9)) {
-                        ddx = -1;
-                        ddy = 0;
-                    } else if (dir(9, 11)) {
-                        ddx = -1;
-                        ddy = -1;
-                    } else if (dir(11, 13)) {
-                        ddx = 0;
-                        ddy = -1;
-                    } else if (dir(13, 15)) {
-                        ddx = 1;
-                        ddy = -1;
-                    } else {
-                        ddx = 1;
-                        ddy = 0;
-                    }
+float compute_decay_factor(float wind_direction, int direction)
+{
+    float wind_deg = wind_direction * 180.0f / PI;
+    int wind_sector = (int)((wind_deg + 22.5f) / 45.0f) % 8;
+    
+    int diff = (direction - wind_sector + 8) % 8;
 
-                    if (field[y][x] != 0) {
-                        if(y + 1 < 100 && x + 1 < 100 && field[y+1][x+1] < DISP * field[y][x])
-                            field[y+1][x+1] = DISP * field[y][x];
+    switch (diff)
+    {
+        case 0: return 0.7f;   // Přímý vítr
+        case 1: return 0.5f;   // Diagonálně s větrem
+        case 2: return 0.3f;   // Kolmo na vítr
+        case 3: return 0.2f;   // Částečně proti větru
+        case 4: return 0.1f;   // Proti větru (nejslabší)
+        case 5: return 0.2f;   // Částečně proti větru
+        case 6: return 0.3f;   // Kolmo na vítr
+        case 7: return 0.5f;   // Diagonálně s větrem
+        default: return 0.1f;
+    }
+}
 
-                        if(y + 1 < 100 && field[y+1][x] < DISP * field[y][x])
-                            field[y+1][x] = DISP * field[y][x];
-
-                        if(y + 1 < 100 && x - 1 > 0 && field[y+1][x-1] < DISP * field[y][x])
-                            field[y+1][x-1] = DISP * field[y][x];
-
-                        if(x - 1 > 0 && field[y][x-1] < DISP * field[y][x])
-                            field[y][x-1] = DISP * field[y][x];
-
-                        if(y -1 > 0 && x - 1 > 0 && field[y-1][x-1] < DISP * field[y][x])
-                            field[y-1][x-1] = DISP * field[y][x];
-
-                        if(y - 1 > 0 && field[y-1][x] < DISP * field[y][x])
-                            field[y-1][x] = DISP * field[y][x];
-
-                        if(y - 1 > 0 && x + 1 < 100 && field[y-1][x+1] < DISP * field[y][x])
-                            field[y-1][x+1] = DISP * field[y][x];
-
-                        if(x + 1 < 100 && field[y][x+1] < DISP * field[y][x] && field[y][x+1] < DISP * field[y][x])
-                            field[y][x+1] = DISP * field[y][x];
-                    }
-
-                    if (y+ddy < 100 && x+ddx < 100 && field[y][x] != 0) {
-                        field[y+ddy][x+ddx] = 0.5 * field[y][x];
-                    }
-                }
-            }
-
-            print_sim(&field);
-
-            return 0;
-        }
-
-        void print_sim(std::vector<std::vector<int>> *field) {
-            std::cout << "    ";
-            for (int x = 0; x < 100; x++)
-                if (x < 10)
-                    std::cout << x << "   ";
-                else if (x < 100)
-                    std::cout << x << "  ";
-                else
-                    std::cout << x << " ";
-
-            std::cout << std::endl;
-
-            for (int y = 99; y; y--) {
-                if (y < 10)
-                    std::cout << y << ":   ";
-                else if (y < 100)
-                    std::cout << y << ":  ";
-                else 
-                    std::cout << y << ": ";
-
-                for (int x = 0; x < 100; x++) {
-                    if ((*field)[y][x] == 0)
-                        std::cout <<  " ";
-                    else
-                        std::cout << (int)(*field)[y][x];
-
-                    if ((*field)[y][x] < 10)
-                        std::cout << "   ";
-                    else if ((*field)[y][x] < 100)
-                        std::cout << "  ";
-                    else 
-                        std::cout << " ";
-                }
-                std::cout << std::endl;
-            }
-        }
-
-        int translate_y(int x) {
-            return 99 - x;
-        }
+struct NeighborPos
+{
+    int new_row;
+    int new_col;
+    bool valid;
 };
 
-#endif
+NeighborPos get_neighbor(int row, int col, int direction, uint32_t height, uint32_t width)
+{
+    int dr = 0, dc = 0;
+    
+    switch (direction)
+    {
+        case 0: dr =  0; dc =  1; break;  // E (Východ)
+        case 1: dr = -1; dc =  1; break;  // NE (Severovýchod)
+        case 2: dr = -1; dc =  0; break;  // N (Sever)
+        case 3: dr = -1; dc = -1; break;  // NW (Severozápad)
+        case 4: dr =  0; dc = -1; break;  // W (Západ)
+        case 5: dr =  1; dc = -1; break;  // SW (Jihozápad)
+        case 6: dr =  1; dc =  0; break;  // S (Jih)
+        case 7: dr =  1; dc =  1; break;  // SE (Jihovýchod)
+    }
+    
+    int new_row = row + dr;
+    int new_col = col + dc;
+    
+    bool valid = (new_row >= 0 && new_row < (int)height &&new_col >= 0 && new_col < (int)width);
+    
+    return {new_row, new_col, valid};
+}
+
+
+class Simulation
+{
+    private:
+        std::vector<std::vector<uint16_t>>& heights_vec;
+        std::vector<std::vector<float>>& pollution_vec;
+
+    public:
+        Simulation(
+            std::vector<std::vector<uint16_t>>& heights,
+            std::vector<std::vector<float>>& pollution
+        ) : heights_vec(heights), pollution_vec(pollution) {}
+
+        void generatePolution(const std::vector<Plant>& plants)
+        {
+            for (const auto& plant : plants)
+            {
+                // Konverze: kg/rok → kg/hodinu
+                float hourly_emission = plant.emission / CONVERSION_HOUR_KG;
+                pollution_vec[plant.row][plant.col] += hourly_emission;
+            }
+        }
+
+        void distributePolution(uint32_t height, uint32_t width, float wind_direction, float wind_speed)
+        {
+            /*
+            std::cout << "💨 Distribuce znečištění..." << std::endl;
+            std::cout << "  Vítr: " << wind_direction * 180.0f / PI << "°, "
+                    << wind_speed << " m/s" << std::endl;
+            */
+            // Vytvoř dočasný grid pro nově distribuované hodnoty
+            std::vector<std::vector<float>> distributed(
+                height, std::vector<float>(width, 0.0f)
+            );
+            
+            // Iteruj přes každou buňku v pollution gridu
+            for (uint32_t r = 0; r < height; r++)
+            {
+                for (uint32_t c = 0; c < width; c++)
+                {
+                    // Pokud je znečištění zanedbatelné, přeskočit
+                    if (pollution_vec[r][c] < THRESHOLD)
+                        continue;
+                    
+                    float current_pollution = pollution_vec[r][c];
+                    uint16_t source_height = heights_vec[r][c];
+                    float transfered_amount = 0.0f;
+                    
+                    // ═══════════════════════════════════════════════════════════
+                    // ROZPROSTŘI DO VŠECH 8 OKOLNÍCH BUNĚK
+                    // ═══════════════════════════════════════════════════════════
+                    
+                    for (int dir = 0; dir < 8; dir++)
+                    {
+                        // Získej sousední buňku
+                        NeighborPos neighbor = get_neighbor(r, c, dir, height, width);
+                        
+                        if (!neighbor.valid)
+                            continue;  // Mimo grid
+                        
+                        int nr = neighbor.new_row;
+                        int nc = neighbor.new_col;
+                        
+                        // ═════════════════════════════════════════════════════
+                        // VÝPOČET ÚTLUMU NA ZÁKLADĚ VĚTRU
+                        // ═════════════════════════════════════════════════════
+                        
+                        float decay = compute_decay_factor(wind_direction, dir);
+                        
+                        // ═════════════════════════════════════════════════════
+                        // ZOHLEDNĚNÍ NADMOŘSKÉ VÝŠKY (emise padají dolů)
+                        // ═════════════════════════════════════════════════════
+                        
+                        uint16_t dest_height = heights_vec[nr][nc];
+                        
+                        // Cílová buňka je VÝŠE → emise padají dolů
+                        // Násobíme s penalizačním faktorem
+                        if (dest_height > source_height)
+                            decay *= GRAVITY_PENALTY;
+
+                        // Pokud dest_height < source_height → normální šíření
+                        
+                        // ═════════════════════════════════════════════════════
+                        // VÝPOČET DISTRIBUOVANÉ HODNOTY
+                        // ═════════════════════════════════════════════════════
+                        
+                        float distributed_amount = current_pollution * decay;
+                        
+                        // ═════════════════════════════════════════════════════
+                        // KONTROLA PRAHU ZANEDBATELNOSTI
+                        // ═════════════════════════════════════════════════════
+                        
+                        if (distributed_amount < THRESHOLD)
+                            continue;  // Příliš malé → ignoruj
+                        
+                        // ═════════════════════════════════════════════════════
+                        // PŘIDEJ DO SOUSEDNÍ BUŇKY
+                        // ═════════════════════════════════════════════════════
+                        
+                        distributed[nr][nc] += distributed_amount;
+                        transfered_amount += distributed_amount;
+                    }
+                    
+                    // ═══════════════════════════════════════════════════════════
+                    // PŮVODNÍ BUŇKA ZŮSTANE (nebo se rozpustí)
+                    // ═══════════════════════════════════════════════════════════
+                    
+                    // Možnost 1: Ponech původní hodnotu (akumulace)
+                    distributed[r][c] = current_pollution - transfered_amount;
+                    
+                    // Možnost 2: Rozpusť (zbude 50%)
+                    // distributed[r][c] += current_pollution * 0.5f;
+                }
+            }
+            
+            // ════════════════════════════════════════════════════════════════
+            // PŘESUŇ DISTRIBUOVANÉ HODNOTY ZPĚT DO POLLUTION VEKTORU
+            // ════════════════════════════════════════════════════════════════
+            
+            pollution_vec = distributed;
+            
+            // Statistika
+            /*
+            float max_conc = 0.0f;
+            float total_conc = 0.0f;
+            uint32_t cells_with_pollution = 0;
+            
+            for (uint32_t r = 0; r < height; r++)
+            {
+                for (uint32_t c = 0; c < width; c++)
+                {
+                    if (pollution_vec[r][c] > THRESHOLD)
+                    {
+                        max_conc = std::max(max_conc, pollution_vec[r][c]);
+                        total_conc += pollution_vec[r][c];
+                        cells_with_pollution++;
+                    }
+                }
+            }
+            
+            
+            std::cout << "  ✓ Distribuováno do " << cells_with_pollution 
+                    << " buněk" << std::endl;
+            std::cout << "  ✓ Max koncentrace: " << max_conc << " kg/m³" << std::endl;
+            std::cout << "  ✓ Průměrná koncentrace: " 
+                    << (cells_with_pollution > 0 ? total_conc / cells_with_pollution : 0)
+                    << " kg/m³\n" << std::endl;
+            */
+        }
+
+        void run_simulation(const std::vector<Plant>& plants, uint32_t iterations, uint32_t height, uint32_t width)
+        {
+            generatePolution(plants);
+            
+            for (uint32_t iter = 0; iter < iterations; iter++)
+            {
+                float wind_dir = generateWindDirection();
+                float wind_spd = generateWindSpeed();
+                
+                distributePolution(height, width, wind_dir, wind_spd);
+                
+                std::cout << "  [" << (iter + 1) << "/" << iterations << "] iterací\n" 
+                        << std::endl;
+            }
+        }
+
+        std::vector<std::vector<float>>& get_pollution() { return pollution_vec; }
+        const std::vector<std::vector<uint16_t>>& get_heights() const { return heights_vec; }
+};
+
+#endif  // sim_hpp
