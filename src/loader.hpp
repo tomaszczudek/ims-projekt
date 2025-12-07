@@ -12,6 +12,9 @@
 #include <cstdio>
 #include <cmath>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #pragma pack(push, 1)
 
 struct RowRange
@@ -199,6 +202,49 @@ class Loader
 
             out.close();
             return true;
+        }
+
+        void save_png(const std::string& output_path) {
+            int width = pollution_[0].size();
+            int height = pollution_.size();
+            int channels = 3;
+            float maxp = 0;
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    if(pollution_[y][x] > maxp) {
+                        maxp = pollution_[y][x];
+                    }
+                }
+            }
+
+            uint8_t* data = (uint8_t*) malloc(width * height * channels);
+            if (data == NULL) {
+                std::cerr << "Save_png: Could not allocate memory.\n";
+                return;
+            }
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int index = (y * width + x) * channels;
+
+                    if (pollution_[y][x] < 0.001){
+                        data[index + 0] = 0;
+                        data[index + 1] = 0;
+                        data[index + 2] = 0;
+                        continue;
+                    };
+
+                    float norm = logf(1.0f + pollution_[y][x]) / logf(1.0f + maxp);
+
+                    data[index + 0] = 255;
+                    data[index + 1] = 255 * (1.0f - norm);
+                    data[index + 2] = 0;
+                }
+            }
+
+            stbi_write_png("output.png", width, height, channels, data, width * channels);
+            free(data);
         }
 
         void close() 

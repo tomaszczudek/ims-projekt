@@ -2,7 +2,8 @@
 #include "sim.hpp"
 
 #define BIN_PATH "src/init32.bin"
-#define OUTPUT_PATH "src/output.bin"
+#define OUTPUT_PATH_BIN "src/output.bin"
+#define OUTPUT_PATH_PNG "output.png"
 #define NUM_ITERATION 200
 
 int main()
@@ -22,8 +23,9 @@ int main()
     // Run the simulation
     sim.run_simulation(loader.get_plants(), NUM_ITERATION);
 
-    // Save results to binary file
-    loader.save_to_binary(OUTPUT_PATH);
+    // Save results to files
+    loader.save_to_binary(OUTPUT_PATH_BIN);
+    loader.save_png(OUTPUT_PATH_PNG);
 
     return 0;
 }
