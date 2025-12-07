@@ -4,7 +4,7 @@
 #include "loader.hpp"
 #include "model.hpp"
 
-#define NUM_ITERATIONS 20
+#define NUM_ITERATIONS 50
 #define SEASON 3
 
 int main()
