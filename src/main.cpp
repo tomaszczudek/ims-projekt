@@ -1,7 +1,7 @@
 #include "loader.hpp"
 #include "sim.hpp"
 
-#define BIN_PATH "src/init.bin"
+#define BIN_PATH "src/init32.bin"
 #define OUTPUT_PATH "src/output.bin"
 #define NUM_ITERATION 200
 
@@ -14,6 +14,7 @@ int main()
 
     if (!loader.load_all_data())
         return 1;
+
     // Data loaded successfully
 
     Simulation sim(loader.get_heights(), loader.get_pollution(), loader.get_height(), loader.get_width());

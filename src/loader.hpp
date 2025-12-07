@@ -70,24 +70,18 @@ class Loader
             if (!file_)
                 return false;
 
-            // Čti header (60B: 4+4+4+48)
+            // File header
             file_.read(reinterpret_cast<char*>(&header_.width), sizeof(uint32_t));
             file_.read(reinterpret_cast<char*>(&header_.height), sizeof(uint32_t));
             file_.read(reinterpret_cast<char*>(&header_.num_valid_rows), sizeof(uint32_t));
             for (int i = 0; i < 6; i++)
                 file_.read(reinterpret_cast<char*>(&header_.transform[i]), sizeof(double));
 
-            std::cout << " ✓ Header:" << std::endl;
-            std::cout << "  Width: " << header_.width << std::endl;
-            std::cout << "  Height: " << header_.height << std::endl;
-            std::cout << "  Valid rows: " << header_.num_valid_rows << std::endl;
-
-            // Čti počet továren (4B)
+            // Plant count
             uint32_t num_plants = 0;
             file_.read(reinterpret_cast<char*>(&num_plants), sizeof(uint32_t));
-            std::cout << "  Plants: " << num_plants << std::endl;
 
-            // Čti data továren (12B per plant)
+            // Read plant data
             plants_.reserve(num_plants);
             for (uint32_t i = 0; i < num_plants; i++)
             {
@@ -98,7 +92,7 @@ class Loader
                 plants_.push_back(p);
             }
 
-            // Čti row ranges (12B per row)
+            // Read row ranges
             row_ranges_.reserve(header_.num_valid_rows);
             for (uint32_t i = 0; i < header_.num_valid_rows; i++)
             {
@@ -109,15 +103,9 @@ class Loader
                 row_ranges_.push_back(rr);
             }
 
-            std::cout << "  ✓ Row ranges: " << row_ranges_.size() << std::endl;
-            std::cout << "  ✓ Továren: " << plants_.size() << std::endl;
-
             return true;
         }
-
-        /**
-         * Načti všechna data
-         */
+        
         bool load_all_data()
         {
             if (row_ranges_.empty())
@@ -131,7 +119,6 @@ class Loader
                 pollution_[row].resize(header_.width, 0.0f);
             }
 
-            std::cout << " 📊 Čtení dat..." << std::endl;
             for (const auto& rr : row_ranges_)
             {
                 uint32_t row_id = rr.row_id;
@@ -148,25 +135,8 @@ class Loader
                 }
             }
 
-            std::cout << " ✓ Všechna data načtena" << std::endl;
             loaded = true;
             return true;
-        }
-
-        // ========== GETTERY ==========
-
-        uint16_t get_height(uint32_t row, uint32_t col) const 
-        {
-            if (!loaded || row >= header_.height || col >= header_.width)
-                return 0;
-            return heights_[row][col];
-        }
-
-        float get_pollution(uint32_t row, uint32_t col) const
-        {
-            if (!loaded || row >= header_.height || col >= header_.width) 
-                return 0.0f;
-            return pollution_[row][col];
         }
 
         std::vector<std::vector<uint16_t>>& get_heights() {return heights_;}
@@ -175,59 +145,6 @@ class Loader
         uint32_t get_width() const { return header_.width; }
         uint32_t get_height() const { return header_.height; }
         bool is_loaded() const { return loaded; }
-
-        void print_info() const
-        {
-            std::cout << "\n=== Terrain Info ===" << std::endl;
-            std::cout << "Soubor: " << filepath_ << std::endl;
-            std::cout << "Rozměry: " << header_.width << "×" << header_.height << std::endl;
-            std::cout << "Valid rows: " << header_.num_valid_rows << std::endl;
-            std::cout << "Továrny: " << plants_.size() << std::endl;
-            std::cout << "Loaded: " << (loaded ? "Yes" : "No") << std::endl;
-
-            if (!row_ranges_.empty())
-            {
-                uint64_t total_cells = 0;
-                for (const auto& rr : row_ranges_)
-                    total_cells += rr.col_count();
-                
-                std::cout << "Total cells: " << total_cells << std::endl;
-            }
-            std::cout << "======================\n" << std::endl;
-        }
-
-        void print_plants() const
-        {
-            if (plants_.empty())
-                return;
-
-            std::cout << "\n 🏭 TOVÁRNY V GRIDU:" << std::endl;
-            std::cout << " " << std::string(60, '-') << std::endl;
-            std::cout << " ID | Row | Col | Emission [kg/rok]" << std::endl;
-            std::cout << " " << std::string(60, '-') << std::endl;
-
-            for (size_t i = 0; i < plants_.size(); i++)
-            {
-                const auto& p = plants_[i];
-                printf(" %3lu | %6u | %6u | %.2e\n",
-                    i, p.row, p.col, p.emission);
-            }
-
-            std::cout << " " << std::string(60, '-') << std::endl;
-
-            // Statistika
-            double total_emission = 0;
-            double max_emission = 0;
-            for (const auto& p : plants_)
-            {
-                total_emission += p.emission;
-                if (p.emission > max_emission)
-                    max_emission = p.emission;
-            }
-
-            printf(" Celkem: %.2e kg/rok (max: %.2e)\n", total_emission, max_emission);
-            std::cout << std::endl;
-        }
 
         bool save_to_binary(const std::string& output_path)
         {
@@ -245,11 +162,11 @@ class Loader
             for (int i = 0; i < 6; i++)
                 out.write(reinterpret_cast<char*>(&header_.transform[i]), sizeof(double));
 
-            // Počet továren
+            // Number of plants
             uint32_t num_plants = plants_.size();
             out.write(reinterpret_cast<char*>(&num_plants), sizeof(uint32_t));
 
-            // Data továren
+            // Plant data
             for (const auto& p : plants_)
             {
                 out.write(reinterpret_cast<char*>(const_cast<uint32_t*>(&p.row)), sizeof(uint32_t));
@@ -281,7 +198,6 @@ class Loader
             }
 
             out.close();
-            std::cout << " ✓ Soubor uložen!" << std::endl;
             return true;
         }
 
