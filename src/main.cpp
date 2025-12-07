@@ -1,9 +1,9 @@
 #include "loader.hpp"
 #include "sim.hpp"
 
-#define BIN_PATH "src/init32.bin"
+#define BIN_PATH "src/init.bin"
 #define OUTPUT_PATH "src/output.bin"
-#define NUM_ITERATION 5
+#define NUM_ITERATION 200
 
 int main()
 {
@@ -14,10 +14,11 @@ int main()
 
     if (!loader.load_all_data())
         return 1;
+    // Data loaded successfully
 
     Simulation sim(loader.get_heights(), loader.get_pollution(), loader.get_height(), loader.get_width());
 
-    // Data loaded successfully
+    // Run the simulation
     sim.run_simulation(loader.get_plants(), NUM_ITERATION);
 
     // Save results to binary file

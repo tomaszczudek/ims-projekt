@@ -19,7 +19,6 @@ struct Plant;
 #define AREA_OF_CELL16   (66 * 96)
 
 #define THRESHOLD        0.00001f      
-#define GRAVITY_PENALTY  0.5f          
 
 constexpr float PI = 3.14159265359f;
 
@@ -28,7 +27,7 @@ static std::mt19937 rng(std::random_device{}());
 float generateWindDirection()
 {
     std::uniform_int_distribution<> dist(0, 23);
-    return (dist(rng) * 15.0f) * (PI / 180.0f);  // 0-360° v radiánech
+    return (dist(rng) * 15.0f) * (PI / 180.0f);  // radians
 }
 
 float generateWindSpeed()
@@ -46,14 +45,14 @@ float compute_decay_factor(float wind_direction, int direction)
 
     switch (diff)
     {
-        case 0: return 0.7f;   // Přímý vítr
-        case 1: return 0.5f;   // Diagonálně s větrem
-        case 2: return 0.3f;   // Kolmo na vítr
-        case 3: return 0.2f;   // Částečně proti větru
-        case 4: return 0.1f;   // Proti větru (nejslabší)
-        case 5: return 0.2f;   // Částečně proti větru
-        case 6: return 0.3f;   // Kolmo na vítr
-        case 7: return 0.5f;   // Diagonálně s větrem
+        case 0: return 0.7f;   // Direct wind
+        case 1: return 0.5f;   // Diagonal with wind
+        case 2: return 0.3f;   // Perpendicular to wind
+        case 3: return 0.2f;   // Partially against wind
+        case 4: return 0.1f;   // Against wind (weakest)
+        case 5: return 0.2f;   // Partially against wind
+        case 6: return 0.3f;   // Perpendicular to wind
+        case 7: return 0.5f;   // Diagonal with wind
         default: return 0.1f;
     }
 }
@@ -71,14 +70,14 @@ NeighborPos get_neighbor(int row, int col, int direction, uint32_t height, uint3
     
     switch (direction)
     {
-        case 0: dr =  0; dc =  1; break;  // E (Východ)
-        case 1: dr = -1; dc =  1; break;  // NE (Severovýchod)
-        case 2: dr = -1; dc =  0; break;  // N (Sever)
-        case 3: dr = -1; dc = -1; break;  // NW (Severozápad)
-        case 4: dr =  0; dc = -1; break;  // W (Západ)
-        case 5: dr =  1; dc = -1; break;  // SW (Jihozápad)
-        case 6: dr =  1; dc =  0; break;  // S (Jih)
-        case 7: dr =  1; dc =  1; break;  // SE (Jihovýchod)
+        case 0: dr =  0; dc =  1; break;  // E (East)
+        case 1: dr = -1; dc =  1; break;  // NE (Northeast)
+        case 2: dr = -1; dc =  0; break;  // N (North)
+        case 3: dr = -1; dc = -1; break;  // NW (Northwest)
+        case 4: dr =  0; dc = -1; break;  // W (West)
+        case 5: dr =  1; dc = -1; break;  // SW (Southwest)
+        case 6: dr =  1; dc =  0; break;  // S (South)
+        case 7: dr =  1; dc =  1; break;  // SE (Southeast)
     }
     
     int new_row = row + dr;
@@ -112,42 +111,42 @@ class Simulation
                 pollution_vec[plant.row][plant.col] += (plant.emission / CONVERSION_HOUR_KG);
         }
 
-        void distributePolution(float wind_direction, float wind_speed)
+        void distributePolution()
         {
             std::vector<std::vector<bool>> visited(
                 height, std::vector<bool>(width, false)
             );
             
-            // Projdi všechny buňky (bez tohoto bychom nezačali shora)
             for (uint32_t r = 0; r < height; r++)
             {
                 for (uint32_t c = 0; c < width; c++)
                 {
-                    // Pokud je znečištění pod prahem, skip
                     if (pollution_vec[r][c] < THRESHOLD)
                         continue;
                     
                     if (visited[r][c])
                         continue;
                     
-                    // SPUSŤ REKURZIVNÍ FLOOD-FILL!
-                    distribute_recursive(r, c, pollution_vec[r][c],
-                                        wind_direction, visited);
+                    distribute_recursive(r, c, pollution_vec[r][c], generateWindDirection(), visited);
                 }
             }
         }
 
         void distribute_recursive(int r, int c, float current_pollution, float wind_direction, std::vector<std::vector<bool>>& visited)
         {
-            if (current_pollution < THRESHOLD) return;
-            if (visited[r][c]) return;
+            if (current_pollution < THRESHOLD)
+                return;
+            
+            if (visited[r][c])
+                return;
             
             visited[r][c] = true;
             
             uint16_t source_height = heights_vec[r][c];
-            float transferred = 0.0f;  // ← SLEDUJ KOLIK SE ODEŠLE
+            float transferred = 0.0f;
             
-            for (int dir = 0; dir < 8; dir++) {
+            for (int dir = 0; dir < 8; dir++)
+            {
                 NeighborPos neighbor = get_neighbor(r, c, dir, height, width);
                 
                 if (!neighbor.valid)
@@ -157,39 +156,38 @@ class Simulation
                 
                 uint16_t dest_height = heights_vec[neighbor.new_row][neighbor.new_col];
                 
+                if (dest_height <= 0)
+                    continue;
+
                 if (dest_height > source_height)
-                    decay *= GRAVITY_PENALTY;
+                    decay *= std::exp(-std::pow(dest_height - source_height, 1.2f) / 800.0f);
+                    //decay *= std::exp(-(dest_height - source_height) / 200.0f);
                 
                 float distributed_amount = current_pollution * decay;
                 
                 if (distributed_amount < THRESHOLD)
                     continue;
                 
-                // PŘIDEJ do souseda
                 pollution_vec[neighbor.new_row][neighbor.new_col] += distributed_amount;
                 transferred += distributed_amount;
                 
-                // REKURZE
                 if (distributed_amount >= THRESHOLD && !visited[neighbor.new_row][neighbor.new_col])
                     distribute_recursive(neighbor.new_row, neighbor.new_col, distributed_amount, wind_direction, visited);
             }
-            
             pollution_vec[r][c] -= transferred;
         }
-
 
         void run_simulation(const std::vector<Plant>& plants, uint32_t iterations)
         {
             for (uint32_t iter = 0; iter < iterations; iter++)
             {
                 generatePolution(plants);
-                distributePolution(generateWindDirection(), generateWindSpeed());
+                distributePolution();
                 
                 std::cout << "  [" << (iter + 1) << "/" << iterations << "] iterací\n" 
                         << std::endl;
             }
         }
-
         std::vector<std::vector<float>>& get_pollution() { return pollution_vec; }
         const std::vector<std::vector<uint16_t>>& get_heights() const { return heights_vec; }
 };
