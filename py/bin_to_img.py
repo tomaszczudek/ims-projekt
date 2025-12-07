@@ -170,7 +170,7 @@ def create_image_with_heatmap(pollution, plants, cols, rows, output_path):
             points.append((px, py))
 
         # Nakresli vyplněnou hvězdičku
-        draw.polygon(points, fill=star_color, outline=(255, 255, 255, 255))
+        #draw.polygon(points, fill=star_color, outline=(255, 255, 255, 255))
 
     print(f"✓ Hvězdičky přidány")
 

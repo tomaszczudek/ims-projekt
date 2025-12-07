@@ -1,6 +1,8 @@
 #ifndef loader_hpp
 #define loader_hpp
 
+#pragma once
+
 #include <vector>
 #include <string>
 #include <cstdint>
@@ -8,7 +10,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdio>
-
+#include <cmath>
 // ============= STRUKTURY =============
 
 #pragma pack(push, 1)
@@ -19,7 +21,8 @@ struct RowRange
     uint32_t col_start;
     uint32_t col_end;
 
-    uint32_t col_count() const {
+    uint32_t col_count() const
+    {
         return col_end - col_start;
     }
 };
@@ -45,7 +48,7 @@ struct Plant
 
 #pragma pack(pop)
 
-// ============= TERRAIN LOADER =============
+// ============= LOADER =============
 
 class Loader
 {
@@ -65,9 +68,6 @@ class Loader
     public:
         Loader(const std::string& path) : filepath_(path) {}
 
-        /**
-         * Načti header a row ranges
-         */
         bool load_header()
         {
             file_.open(filepath_, std::ios::binary);
@@ -81,9 +81,8 @@ class Loader
             file_.read(reinterpret_cast<char*>(&header_.width), sizeof(uint32_t));
             file_.read(reinterpret_cast<char*>(&header_.height), sizeof(uint32_t));
             file_.read(reinterpret_cast<char*>(&header_.num_valid_rows), sizeof(uint32_t));
-            for (int i = 0; i < 6; i++) {
+            for (int i = 0; i < 6; i++)
                 file_.read(reinterpret_cast<char*>(&header_.transform[i]), sizeof(double));
-            }
 
             std::cout << " ✓ Header:" << std::endl;
             std::cout << "  Width: " << header_.width << std::endl;
@@ -191,7 +190,6 @@ class Loader
 
         bool is_loaded() const { return loaded; }
 
-        // ========== TISKOVÁ FUNKCE ==========
 
         void print_info() const
         {
@@ -248,8 +246,6 @@ class Loader
             printf(" Celkem: %.2e kg/rok (max: %.2e)\n", total_emission, max_emission);
             std::cout << std::endl;
         }
-
-        // ========== ZÁPIS ==========
 
         bool save_to_binary(const std::string& output_path)
         {
@@ -327,5 +323,6 @@ class Loader
             close();
         }
 };
+
 
 #endif // loader_hpp
