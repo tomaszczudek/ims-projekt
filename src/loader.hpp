@@ -1,3 +1,11 @@
+/**
+ * loader.hpp
+ * 
+ * Třída loader zajišťuje rozhraní mezi předpřipravenným binárním souborem
+ * obsahující výškovou mapu území a zdroje emisí (továrny)
+ * soubor jsme připravili pomocí pythonu
+ */
+
 #ifndef loader_hpp
 #define loader_hpp
 

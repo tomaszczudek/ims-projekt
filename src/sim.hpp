@@ -1,3 +1,10 @@
+
+/**
+ * sim.hpp
+ * 
+ * Třída realizující běh simulace.
+ */
+
 #ifndef sim_hpp
 #define sim_hpp
 
@@ -16,8 +23,6 @@ struct Plant;
 #define CONVERSION_DAY   (365.25f)
 
 #define THRESHOLD        0.00001f      
-
-constexpr float PI = 3.14159265359f;
 
 static std::mt19937 rng(std::random_device{}());
 
@@ -181,8 +186,7 @@ class Simulation
                 generatePolution(plants);
                 distributePolution();
                 
-                std::cout << "  [" << (iter + 1) << "/" << iterations << "] iterací\n" 
-                        << std::endl;
+                std::cout << "  [" << (iter + 1) << "/" << iterations << "] iterací" << std::endl;
             }
         }
 };
