@@ -4,9 +4,12 @@
 #include "loader.hpp"
 #include "model.hpp"
 
+#define NUM_ITERATIONS 10
+#define SEASON 3
+
 int main()
 {
-    const char* bin_path = "src/init.bin";
+    const char* bin_path = "src/init32.bin";
 
     Loader loader(bin_path);
 
@@ -26,17 +29,9 @@ int main()
     std::cout << "  Pokrytí: " << WIDTH_KM << "×" << HEIGHT_KM << " km" << std::endl;
     std::cout << "  Resolution: " << ((WIDTH_KM * 1000.0f) / width_px + (HEIGHT_KM * 1000.0f) / height_px) / 2.0f << " m/px" << std::endl;
 
-    // ==================== KROK 3: VÝBĚR SEZÓNY ====================
-    std::cout << "\n3️⃣  Výběr meteorologické sezóny..." << std::endl;
-    std::cout << "  [1] Zima (inverze, nejhorší případ)          ← DOPORUČENO" << std::endl;
-    std::cout << "  [2] Jaro/Podzim (normální podmínky)        " << std::endl;
-    std::cout << "  [3] Léto (silný rozptyl)                    " << std::endl;
-
-    int season = 3;  // Default: Zima
-
     std::vector<MeteoData> scenarios;
 
-    switch(season)
+    switch(SEASON)
     {
         case 1:
             scenarios = MeteoScenarios::get_winter_scenarios();
@@ -50,11 +45,6 @@ int main()
         default:
             scenarios = MeteoScenarios::get_winter_scenarios();
     }
-
-    std::cout << "  Počet scénářů: " << scenarios.size() << std::endl;
-
-    // ==================== KROK 4: INICIALIZUJ MODEL V3 ====================
-    std::cout << "\n4️⃣  Inicializace Gaussian Plume Model V3..." << std::endl;
 
     GaussianPlumeModel model(
         width_px,
@@ -75,9 +65,9 @@ int main()
 
     float max_conc_overall = 0.0f;
 
-    for (size_t iter = 0; iter < scenarios.size(); iter++)
+    for (size_t iter = 0; iter < NUM_ITERATIONS; iter++)
     {
-        const auto& meteo = scenarios[iter];
+        const auto& meteo = getRandomScenario(scenarios);
 
         // Nastav meteorologické parametry
         model.set_wind_speed(meteo.wind_speed);
@@ -91,19 +81,14 @@ int main()
         auto& pollution = loader.get_pollution_mut();
         float max_conc = 0.0f;
         for (uint32_t row = 0; row < height_px; row++)
-        {
             for (uint32_t col = 0; col < width_px; col++)
-            {
                 max_conc = std::max(max_conc, pollution[row][col]);
-            }
-        }
 
-        if (max_conc > max_conc_overall) {
+        if (max_conc > max_conc_overall)
             max_conc_overall = max_conc;
-        }
 
-        printf("  [%2lu/%lu] \n",
-               iter+1, scenarios.size());
+        printf("  [%2lu/%d] \n",
+               iter+1, NUM_ITERATIONS);
         printf("           Vítr: %.1f m/s @ %.0f°, H_eff: %.0f m, Max: %.2e kg/m³\n",
                meteo.wind_speed, meteo.wind_direction, 
                meteo.effective_height, max_conc);
@@ -177,13 +162,13 @@ int main()
         printf("      Elevace: %u m, Výška nad terénem: %.0f m (eff_height + elev)\n\n",
                elev, 50.0f + elev);  // Default 50m effective height
     }
-
+*/
     // ==================== KROK 8: ULOŽ VÝSLEDKY ====================
     std::cout << "8️⃣  Uložení výsledků..." << std::endl;
 
     char output_file[20] = "src/output.bin";
     loader.save_to_binary(output_file);
-
+/*
     // ==================== VÝSLEDEK ====================
     std::cout << "\n" << std::string(70, '=') << std::endl;
     std::cout << "✓ ITERATIVNÍ SIMULACE V3 (SE ELEVACÍ) HOTOVA!" << std::endl;

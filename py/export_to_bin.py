@@ -35,7 +35,7 @@ TIFF_ROW_START_RATIO = 0.27
 TIFF_ROW_END_RATIO = 0.65
 MIN_HEIGHT = -500
 MAX_HEIGHT = 2500
-SCALE_FACTOR = 16
+SCALE_FACTOR = 32
 
 # MSK REGION
 MSK_NORTH = 50.327
@@ -341,7 +341,7 @@ def step3_create_pollution_grid(heights, mapped_plants):
 
     return pollution_grid
 
-def step4_export_bin_v5_with_plants(heights, pollution, transform, mapped_plants, output_file='../src/init.bin'):
+def step4_export_bin_v5_with_plants(heights, pollution, transform, mapped_plants, output_file='../src/init32.bin'):
     """Exportuj do BIN s uloženými indexy továren"""
     print("=" * 70)
     print("KROK 4: EXPORT V5 BINARY S INDEXY TOVÁREN")

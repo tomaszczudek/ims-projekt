@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <cstdio>
 #include <cmath>
-// ============= STRUKTURY =============
 
 #pragma pack(push, 1)
 
@@ -32,14 +31,14 @@ struct TerrainHeader
     uint32_t width;
     uint32_t height;
     uint32_t num_valid_rows;
-    double transform[6];  // a, b, c, d, e, f
+    double transform[6];
 };
 
 struct Plant
 {
     uint32_t row;
     uint32_t col;
-    float emission;  // [kg/rok]
+    float emission;
 
     Plant() : row(0), col(0), emission(0.0f) {}
     Plant(uint32_t r, uint32_t c, float e) 
@@ -47,8 +46,6 @@ struct Plant
 };
 
 #pragma pack(pop)
-
-// ============= LOADER =============
 
 class Loader
 {
@@ -59,7 +56,6 @@ class Loader
         std::vector<Plant> plants_;
         std::ifstream file_;
 
-        // 2D arrays
         std::vector<std::vector<uint16_t>> heights_;
         std::vector<std::vector<float>> pollution_;
 
@@ -72,10 +68,7 @@ class Loader
         {
             file_.open(filepath_, std::ios::binary);
             if (!file_)
-            {
-                std::cerr << "✗ Chyba: Nelze otevřít " << filepath_ << std::endl;
                 return false;
-            }
 
             // Čti header (60B: 4+4+4+48)
             file_.read(reinterpret_cast<char*>(&header_.width), sizeof(uint32_t));
@@ -128,10 +121,7 @@ class Loader
         bool load_all_data()
         {
             if (row_ranges_.empty())
-            {
-                std::cerr << "✗ Nejdřív zavolej load_header()!" << std::endl;
                 return false;
-            }
 
             heights_.resize(header_.height);
             pollution_.resize(header_.height);
@@ -180,20 +170,15 @@ class Loader
         }
 
         std::vector<std::vector<uint16_t>>& get_heights_mut() {return heights_;}
-
         std::vector<std::vector<float>>& get_pollution_mut() {return pollution_;}
-
         const std::vector<Plant>& get_plants() const {return plants_;}
-
         uint32_t get_width() const { return header_.width; }
         uint32_t get_height() const { return header_.height; }
-
         bool is_loaded() const { return loaded; }
-
 
         void print_info() const
         {
-            std::cout << "\n=== Terrain V5 Info ===" << std::endl;
+            std::cout << "\n=== Terrain Info ===" << std::endl;
             std::cout << "Soubor: " << filepath_ << std::endl;
             std::cout << "Rozměry: " << header_.width << "×" << header_.height << std::endl;
             std::cout << "Valid rows: " << header_.num_valid_rows << std::endl;
@@ -214,10 +199,7 @@ class Loader
         void print_plants() const
         {
             if (plants_.empty())
-            {
-                std::cout << "\n 🏭 Žádné továrny!\n" << std::endl;
                 return;
-            }
 
             std::cout << "\n 🏭 TOVÁRNY V GRIDU:" << std::endl;
             std::cout << " " << std::string(60, '-') << std::endl;
@@ -250,27 +232,18 @@ class Loader
         bool save_to_binary(const std::string& output_path)
         {
             if (!loaded)
-            {
-                std::cerr << "✗ Nejdřív zavolej load_all_data()!" << std::endl;
                 return false;
-            }
 
-            std::cout << " 💾 Zápis do " << output_path << "..." << std::endl;
             std::ofstream out(output_path, std::ios::binary);
             if (!out)
-            {
-                std::cerr << "✗ Chyba: Nelze otevřít " << output_path << " pro zápis" << std::endl;
                 return false;
-            }
 
             // Header
             out.write(reinterpret_cast<char*>(&header_.width), sizeof(uint32_t));
             out.write(reinterpret_cast<char*>(&header_.height), sizeof(uint32_t));
             out.write(reinterpret_cast<char*>(&header_.num_valid_rows), sizeof(uint32_t));
             for (int i = 0; i < 6; i++)
-            {
                 out.write(reinterpret_cast<char*>(&header_.transform[i]), sizeof(double));
-            }
 
             // Počet továren
             uint32_t num_plants = plants_.size();

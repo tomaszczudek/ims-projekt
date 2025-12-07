@@ -7,7 +7,16 @@
 #include <cstdint>
 #include <cmath>
 #include <iostream>
+#include <random>
 
+#define EMISSION_CONVERSION_FACTOR_SEC (365.25f * 24.0f * 3600.0f)
+#define EMISSION_CONVERSION_FACTOR_HOUR (365.25f * 24.0f)
+#define EMISSION_CONVERSION_FACTOR_DAY (365.25f)
+
+#define WIDTH_KM 105.0f
+#define HEIGHT_KM 127.0f
+
+static std::mt19937 rng(std::random_device{}());
 struct Plant;
 
 enum class StabilityClass
@@ -62,13 +71,6 @@ class PasquillGifford
             }
         }
 };
-
-#define EMISSION_CONVERSION_FACTOR_SEC (365.25f * 24.0f * 3600.0f)
-#define EMISSION_CONVERSION_FACTOR_HOUR (365.25f * 24.0f)
-#define EMISSION_CONVERSION_FACTOR_DAY (365.25f)
-
-#define WIDTH_KM 105.0f
-#define HEIGHT_KM 127.0f
 
 class GaussianPlumeModel
 {
@@ -343,7 +345,17 @@ class MeteoScenarios
                 {3.5f, 315.0f, StabilityClass::E, 40.0f},
                 {2.0f, 0.0f, StabilityClass::F, 30.0f},
                 {4.0f, 45.0f, StabilityClass::D, 50.0f},
-                {3.0f, 90.0f, StabilityClass::E, 35.0f}
+                {3.0f, 90.0f, StabilityClass::E, 35.0f},
+                {1.0f, 45.0f, StabilityClass::F, 25.0f},
+                {1.5f, 90.0f, StabilityClass::F, 30.0f},
+                {2.5f, 135.0f, StabilityClass::E, 35.0f},
+                {3.5f, 180.0f, StabilityClass::D, 45.0f},
+                {2.0f, 225.0f, StabilityClass::F, 30.0f},
+                {0.8f, 270.0f, StabilityClass::F, 20.0f},
+                {4.0f, 315.0f, StabilityClass::E, 40.0f},
+                {1.3f, 0.0f, StabilityClass::F, 28.0f},
+                {2.2f, 45.0f, StabilityClass::F, 32.0f},
+                {3.0f, 90.0f, StabilityClass::D, 42.0f}
             };
         }
 
@@ -360,7 +372,17 @@ class MeteoScenarios
                 {4.0f, 315.0f, StabilityClass::C, 50.0f},
                 {3.5f, 0.0f, StabilityClass::C, 50.0f},
                 {2.5f, 45.0f, StabilityClass::D, 35.0f},
-                {3.0f, 180.0f, StabilityClass::D, 40.0f}
+                {3.0f, 180.0f, StabilityClass::D, 40.0f},
+                {3.5f, 45.0f, StabilityClass::C, 50.0f},
+                {4.0f, 90.0f, StabilityClass::C, 55.0f},
+                {2.8f, 135.0f, StabilityClass::D, 45.0f},
+                {5.5f, 180.0f, StabilityClass::C, 60.0f},
+                {3.0f, 225.0f, StabilityClass::D, 48.0f},
+                {2.5f, 270.0f, StabilityClass::D, 42.0f},
+                {4.5f, 315.0f, StabilityClass::D, 52.0f},
+                {3.2f, 0.0f, StabilityClass::C, 48.0f},
+                {3.8f, 45.0f, StabilityClass::C, 50.0f},
+                {4.2f, 90.0f, StabilityClass::B, 58.0f}
             };
         }
 
@@ -377,9 +399,25 @@ class MeteoScenarios
                 {5.0f, 315.0f, StabilityClass::A, 65.0f},
                 {4.0f, 0.0f, StabilityClass::B, 55.0f},
                 {3.0f, 45.0f, StabilityClass::C, 50.0f},
-                {2.5f, 180.0f, StabilityClass::B, 40.0f}
+                {2.5f, 180.0f, StabilityClass::B, 40.0f},
+                {2.0f, 45.0f, StabilityClass::A, 70.0f},
+                {1.5f, 90.0f, StabilityClass::A, 65.0f},
+                {5.0f, 135.0f, StabilityClass::B, 60.0f},
+                {6.0f, 180.0f, StabilityClass::B, 65.0f},            
+                {2.5f, 225.0f, StabilityClass::C, 50.0f},
+                {3.5f, 270.0f, StabilityClass::B, 62.0f},
+                {4.2f, 315.0f, StabilityClass::B, 58.0f},
+                {2.8f, 0.0f, StabilityClass::C, 55.0f},
+                {1.2f, 45.0f, StabilityClass::A, 72.0f},
+                {5.5f, 90.0f, StabilityClass::B, 62.0f}
             };
         }
 };
+
+inline const MeteoData& getRandomScenario(const std::vector<MeteoData>& scenarios)
+{
+    std::uniform_int_distribution<size_t> dist(0, scenarios.size() - 1);
+    return scenarios[dist(rng)];
+}
 
 #endif // model_hpp
